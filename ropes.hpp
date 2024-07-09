@@ -4,30 +4,30 @@
 #include <memory>
 #include <string>
 
+#include <iostream>
 
 struct Knot {
-  Knot(std::string &s) : str(s) {}
-// use Character for te
+  Knot() : str("") {}
   std::string str;
 };
 
 class Rope {
-public:
+public: 
 // leaf constructor
-  Rope();
-// primary constructor
-  Rope(std::string &s) : Rope(s, std::make_shared<Rope>(this)) {};
+  Rope() : left(nullptr), right(nullptr), knot(Knot()), weight(0) {}
+// primary constructorthis
+  Rope(const std::string &s);
+  ~Rope();
+
+  Rope* parent;
+  Rope* left;
+  Rope* right;
+  Knot knot;
+  uint64_t weight;
 
 private:
-  Rope(std::string& s, std::shared_ptr<Rope> parent);
 // assembles tree with leaf->chars.size() <= str_max
-  void weave(std::string& s, const int str_max);
-
-  std::shared_ptr<Rope> parent;
-  std::shared_ptr<Rope> left;
-  std::shared_ptr<Rope> right;
-  std::shared_ptr<Knot> knot;
-  uint64_t weight;
+  void weave(const std::string& s, const int str_max);
 };
 
 #endif
