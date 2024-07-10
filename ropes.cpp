@@ -3,61 +3,71 @@
                   // *********** Rope public *********** //
 
 void Rope::concat(const Rope& other) {
-  root->_concat(*other.root);
+  auto temp = std::make_shared<Rope_t>();
+  temp->left = root->left;
+  temp->right = other.root->left;
+  temp->weight = root->weight;
+  root->left = temp;
+  root->weight += other.root->weight;
 }
 
-char Rope::get(int idx) {
-  return root->_get_char(idx);
-}
-
-void Rope::insert_elt(char c, int idx) {
+void Rope::insert(int idx, char c) {
 
 }
 
 void Rope::print() {
-  root->_print();
+  root->left->_print();
 }
 
 size_t Rope::size() {
-  return root->k_weight;
+  return root->weight;
+}
+
+char& Rope::operator[](int idx) const {
+  return root->left->_get_char(idx);
 }
 
                   // *********** Rope constructors *********** //
 
 Rope::Rope(std::string& s, int max) {
-    root->weave(s, max);
+    root->weight = s.size();
+    root->left = std::make_shared<Rope_t>();
+    root->left->weave(s, max, leaves);
 }
 
 Rope::Rope(const std::string& s, int max) {
-    root->weave(s, max);
+    root->weight = s.size();
+    root->left = std::make_shared<Rope_t>();
+    root->left->weave(s, max, leaves);
 }
 
 
                   // *********** Rope_t private *********** //
 
-void Rope_t::weave(const std::string& s, int str_max) {
+void Rope_t::weave(const std::string& s, int str_max, 
+                         std::list<std::shared_ptr<Rope_t>> l) {
+  
+  std::shared_ptr<Rope_t> self = shared_from_this();
+
   if (s.size() <= str_max) {
     weight = s.size();
-    k_weight = weight;
     knot.tied = true;
     knot.conts = s;
+    l.push_back(self);
     return;
   }
-
-  std::shared_ptr<Rope_t> self = shared_from_this();
 
   size_t mid = s.size() / 2;
   std::string ls(s.begin(), s.begin() + mid);
   std::string rs(s.begin() + mid, s.end());
 
-  k_weight = s.size();
   weight = ls.size();
 
   right = std::make_shared<Rope_t>();
   left = std::make_shared<Rope_t>();
   
-  right->weave(rs, str_max);
-  left->weave(ls, str_max);
+  right->weave(rs, str_max, l);
+  left->weave(ls, str_max, l);
 
   right->parent = self;
   left->parent = self;
@@ -73,8 +83,7 @@ std::shared_ptr<Rope_t> Rope_t::copy(
   Rope_t_new->parent = p;
 
   Rope_t_new->knot = r->knot;
-  Rope_t_new->weight = r->weight; 
-  Rope_t_new->k_weight = r->k_weight;
+  Rope_t_new->weight = r->weight;
 
   Rope_t_new->left = copy(r->left, Rope_t_new);
   Rope_t_new->right = copy(r->right, Rope_t_new);
@@ -85,31 +94,29 @@ std::shared_ptr<Rope_t> Rope_t::copy(
 
 void Rope_t::_concat(const Rope_t& r) {
   auto temp = std::make_unique<Rope_t>(*this);
-
-  if (left) {
-    weight = left->k_weight;
-  } else {
+  if (!left) {
     std::cout << 
           "error: attempt to call concatenate on empty Rope_t" 
                                                           << std::endl;
     std::exit(1);
   }
 
-  k_weight = k_weight + r.k_weight;
   right = std::make_shared<Rope_t>(r);
-
   left = std::move(temp);
 }
 
-char Rope_t::_get_char(int idx) {
-  if (idx >= k_weight) {
+char& Rope_t::_get_char(int idx) {
+  // TODO : add max range
+  if (idx < 0) {
     std::cout << 
           "error: attempt to index into invalid range" 
                                                   << std::endl;
     std::exit(1);
   }
   if (knot.tied) {
-    assert(idx < knot.conts.size());
+    if (idx >= knot.conts.size()) {
+      std::cout << "idx: " << idx << " size: " << weight; 
+    }
     return knot.conts[idx];
   }
   if (idx < weight) {
@@ -120,7 +127,15 @@ char Rope_t::_get_char(int idx) {
 }
 
 void Rope_t::_insert_elt(char c, int idx) {
-  
+  // idx >= k_weight || 
+  if (idx < 0) {
+    std::cout << 
+          "error: attempt to index into invalid range" 
+                                                  << std::endl;
+    std::exit(1);
+  }
+
+
 }
 
 void Rope_t::_print() {
@@ -143,6 +158,5 @@ Rope_t::Rope_t() {
   right = nullptr;
   left = nullptr;
   knot = Knot<std::string>();
-  k_weight = 0;
   weight = 0;
 }
